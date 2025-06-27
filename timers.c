@@ -307,6 +307,17 @@
                 }
                 #else /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
                 {
+
+		/*
+		 * XXX:
+		 *	this is the timer task;
+		 *	which is beging created
+		 *	first arg is the function (will be executed behalf of
+		 *	this task), this is the function (in this source file)
+		 *
+		 *	static portTASK_FUNCTION( prvTimerTask, pvParameters )
+		 *	
+		 */
                     xReturn = xTaskCreate( &prvTimerTask,
                                            configTIMER_SERVICE_TASK_NAME,
                                            configTIMER_TASK_STACK_DEPTH,
@@ -741,6 +752,16 @@
     }
 /*-----------------------------------------------------------*/
 
+/*
+ *
+ * XXX:
+ *	This function seems the timer tasks : execution logic
+ *
+ *
+ *	This is the heart of RTOS (real time OS)
+ *	Time bound routine seems to be executed by this.
+ *	We should read teh background first from the doc
+ */
     static portTASK_FUNCTION( prvTimerTask, pvParameters )
     {
         TickType_t xNextExpireTime;

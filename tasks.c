@@ -278,6 +278,11 @@
 /*-----------------------------------------------------------*/
 
 /*
+ *
+ * XXX:
+ *	Add a task to the shared ready list (shared by all the cores)
+ */
+/*
  * Place the task represented by pxTCB into the appropriate ready list for
  * the task.  It is inserted at the end of the list.
  */
@@ -367,6 +372,10 @@
 /*-----------------------------------------------------------*/
 
 /*
+ * XXX:
+ *	task struct block
+ */
+/*
  * Task control block.  A task control block (TCB) is allocated for each task,
  * and stores task state information, including a pointer to the task's context
  * (the task's run time environment, including register values)
@@ -455,6 +464,11 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
  * below to enable the use of older kernel aware debuggers. */
 typedef tskTCB TCB_t;
 
+/*
+ *
+ * XXX:
+ *	Current task per core!
+ */
 #if ( configNUMBER_OF_CORES == 1 )
     /* MISRA Ref 8.4.1 [Declaration shall be visible] */
     /* More details at: https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/MISRA.md#rule-84 */
@@ -468,6 +482,13 @@ typedef tskTCB TCB_t;
     #define pxCurrentTCB    xTaskGetCurrentTaskHandle()
 #endif
 
+/*
+ * XXX:
+ *	We have readly list which is multi level;
+ *	the levels are based on priority
+ *
+ *	So this ready list will be shared by all the cores
+ */
 /* Lists for ready and blocked tasks. --------------------
  * xDelayedTaskList1 and xDelayedTaskList2 could be moved to function scope but
  * doing so breaks some kernel aware debuggers and debuggers that rely on removing
@@ -508,6 +529,12 @@ PRIVILEGED_DATA static volatile BaseType_t xYieldPendings[ configNUMBER_OF_CORES
 PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows = ( BaseType_t ) 0;
 PRIVILEGED_DATA static UBaseType_t uxTaskNumber = ( UBaseType_t ) 0U;
 PRIVILEGED_DATA static volatile TickType_t xNextTaskUnblockTime = ( TickType_t ) 0U; /* Initialised to portMAX_DELAY before the scheduler starts. */
+/*
+ *
+ * XXX:
+ *	There are the idle tasks for each core present;
+ *	These gets inited during the setup of the scheduler
+ */
 PRIVILEGED_DATA static TaskHandle_t xIdleTaskHandles[ configNUMBER_OF_CORES ];       /**< Holds the handles of the idle tasks.  The idle tasks are created automatically when the scheduler is started. */
 
 /* Improve support for OpenOCD. The kernel tracks Ready tasks via priority lists.
@@ -1737,6 +1764,12 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
     }
 /*-----------------------------------------------------------*/
 
+/*
+ * XXX:
+ *	here dynamic tasks are beinibng created,
+ *	we have ti pass the args for the task
+ *	and task will be created and it will be queued to the ready list
+ */
     BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
                             const char * const pcName,
                             const configSTACK_DEPTH_TYPE uxStackDepth,
@@ -2038,6 +2071,12 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 
 #if ( configNUMBER_OF_CORES == 1 )
 
+/*
+ *
+ * XXX:
+ *	This is how we add task to the ready list
+ *	atleast when the number of core = 1
+ */
     static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
     {
         /* Ensure interrupts don't access the task lists while the lists are being
@@ -2096,6 +2135,10 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
             #endif /* configUSE_TRACE_FACILITY */
             traceTASK_CREATE( pxNewTCB );
 
+	    /*
+	     * XXX:
+	     *	Here is the main logic
+	     */
             prvAddTaskToReadyList( pxNewTCB );
 
             portSETUP_TCB( pxNewTCB );
@@ -3681,9 +3724,19 @@ static BaseType_t prvCreateIdleTasks( void )
         }
     }
 
+    /*
+     * XXX:
+     *	xReturn is a status code
+     */
     return xReturn;
 }
 
+/*
+ *
+ * XXX:
+ *	scheduler starts here (entry point, which is just making the setup)
+ *
+ */
 /*-----------------------------------------------------------*/
 
 void vTaskStartScheduler( void )
@@ -3700,12 +3753,22 @@ void vTaskStartScheduler( void )
     }
     #endif /* #if ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) */
 
+    /* XXX:
+     *		Schduler first init  idle tasks equals to #cores
+     *		get xRetrun is a status if it was sucessfull or not.
+     */
     xReturn = prvCreateIdleTasks();
 
     #if ( configUSE_TIMERS == 1 )
     {
         if( xReturn == pdPASS )
         {
+
+	    /*
+	     * XXX:
+	     *	Start the timer task.
+	     *	What is the significance, read fromn the doc. TODO
+	     */
             xReturn = xTimerCreateTimerTask();
         }
         else
@@ -3757,6 +3820,13 @@ void vTaskStartScheduler( void )
 
         traceSTARTING_SCHEDULER( xIdleTaskHandles );
 
+	/*
+	 *
+	 * XXX:
+	 *	Now here we start the schduler, actually!!!
+	 *	Which is Arctiture dependent scheduler code
+	 *	present in the:		portable/GCC/RISC-V/port.c
+	 */
         /* Setting up the timer tick is hardware specific and thus in the
          * portable interface. */
 

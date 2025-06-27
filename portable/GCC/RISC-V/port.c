@@ -156,7 +156,10 @@ size_t xTaskReturnAddress = ( size_t ) portTASK_RETURN_ADDRESS;
 
 #endif /* ( configMTIME_BASE_ADDRESS != 0 ) && ( configMTIME_BASE_ADDRESS != 0 ) */
 /*-----------------------------------------------------------*/
-
+/*
+ * XXX:
+ *	ESP-IDF specific (Architecture spesific) scheduler
+ */
 BaseType_t xPortStartScheduler( void )
 {
     extern void xPortStartFirstTask( void );
@@ -176,6 +179,11 @@ BaseType_t xPortStartScheduler( void )
     }
     #endif /* configASSERT_DEFINED */
 
+    /*
+     *
+     * XXX:
+     *	Scheduler first set the timer interrupt
+     */
     /* If there is a CLINT then it is ok to use the default implementation
      * in this file, otherwise vPortSetupTimerInterrupt() must be implemented to
      * configure whichever clock is to be used to generate the tick interrupt. */
@@ -190,6 +198,10 @@ BaseType_t xPortStartScheduler( void )
     }
     #endif /* ( configMTIME_BASE_ADDRESS != 0 ) && ( configMTIMECMP_BASE_ADDRESS != 0 ) */
 
+    /*
+     *
+     * XXX: Schduler then start executing the first task
+     */
     xPortStartFirstTask();
 
     /* Should not get here as after calling xPortStartFirstTask() only tasks
